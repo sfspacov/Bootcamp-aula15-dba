@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Threading.Tasks;
 using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
@@ -13,41 +12,57 @@ namespace WebApplication1.Controllers
     [Route("[controller]")]
     public class TestController : ControllerBase
     {
+        private IConfiguration _configuration;
+
+        public TestController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         [HttpGet]
         public IActionResult Get()
         {
             try
             {
-                var connectionString =
-            "Server=127.0.0.1;Database=Bootcamp;User Id=sa;Password=yourStrong(!)Password;";
-                var connection = new SqlConnection(connectionString);
-                connection.Open();
-                var cmdText = "SELECT * FROM usuario";
-                var sqlCommand = new SqlCommand(cmdText, connection);
-                var usuarios = new List<Usuario>();
-                
-                using (var reader = sqlCommand.ExecuteReader())
+                var connectionString = _configuration.GetConnectionString("DevConnection");
+
+                using (var connection = new SqlConnection(connectionString))
                 {
-                    while (reader.Read())
+                    connection.Open();
+                    const string cmdText = @"
+                        SELECT
+                            Nome as [Nome do Infeliz],
+                            Idade as [Idade dele]
+                        FROM usuario
+                        WHERE Idade > 20
+                        ORDER BY Nome
+                        ";
+
+                    var sqlCommand = new SqlCommand(cmdText, connection);
+                    var usuarios = new List<Usuario>();
+
+                    using (var reader = sqlCommand.ExecuteReader())
                     {
-                        var usuario = new Usuario()
+                        while (reader.Read())
                         {
-                            Id = Convert.ToInt32(reader["Id"]),
-                            Idade = Convert.ToInt32(reader["Idade"]),
-                            Nome = Convert.ToString(reader["Nome"]),
-                        };
+                            var usuario = new Usuario
+                            {
+                                Idade = Convert.ToInt32(reader["Idade dele"]),
+                                Nome = Convert.ToString(reader["Nome do Infeliz"]),
+                            };
 
-                        usuarios.Add(usuario);
+                            usuarios.Add(usuario);
+                        }
                     }
+                    return Ok(usuarios
+                        .Select(x => new { NomeDoInfeliz = x.Nome, IdadeDele = x.Idade})
+                    );
                 }
-
-                return Ok(usuarios);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return BadRequest();
             }
-
         }
     }
 }
