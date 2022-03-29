@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using WebApplication1.Models;
@@ -13,10 +14,12 @@ namespace WebApplication1.Controllers
     public class TestController : ControllerBase
     {
         private IConfiguration _configuration;
+        private string _connectionString;
 
         public TestController(IConfiguration configuration)
         {
             _configuration = configuration;
+            _connectionString = _configuration.GetConnectionString("DevConnection");
         }
 
         [HttpGet]
@@ -24,9 +27,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var connectionString = _configuration.GetConnectionString("DevConnection");
-
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
                     const string cmdText = @"
@@ -55,8 +56,83 @@ namespace WebApplication1.Controllers
                         }
                     }
                     return Ok(usuarios
-                        .Select(x => new { NomeDoInfeliz = x.Nome, IdadeDele = x.Idade})
+                        .Select(x => new { NomeDoInfeliz = x.Nome, IdadeDele = x.Idade })
                     );
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPost]
+        public IActionResult Post(Usuario usuarioParam)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    const string cmdText = @"
+                        INSERT INTO usuario                        
+                        VALUES (@Nome, @Idade);
+
+                        SELECT SCOPE_IDENTITY();
+                        ";
+
+                    var sqlCommand = new SqlCommand(cmdText, connection);
+
+                    sqlCommand.Parameters.Add("@Nome", SqlDbType.VarChar);
+                    sqlCommand.Parameters["@Nome"].Value = usuarioParam.Nome;
+
+                    sqlCommand.Parameters.Add("@Idade", SqlDbType.Int);
+                    sqlCommand.Parameters["@Idade"].Value = usuarioParam.Idade;
+
+                    var newId = sqlCommand.ExecuteScalar();
+
+                    return Ok(newId);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPut]
+        public IActionResult Put(int id, Usuario usuarioParam)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(usuarioParam.Nome) || usuarioParam.Idade < 1)
+                    throw new ArgumentNullException();
+
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    const string cmdText = @"
+                        UPDATE usuario
+                        SET 
+                            idade = @Idade,
+                            nome = @Nome
+                        WHERE Id = @Id
+                        ";
+
+                    var sqlCommand = new SqlCommand(cmdText, connection);
+
+                    sqlCommand.Parameters.Add("@Id", SqlDbType.Int);
+                    sqlCommand.Parameters["@Id"].Value = id;
+
+                    sqlCommand.Parameters.Add("@Nome", SqlDbType.VarChar);
+                    sqlCommand.Parameters["@Nome"].Value = usuarioParam.Nome;
+
+                    sqlCommand.Parameters.Add("@Idade", SqlDbType.Int);
+                    sqlCommand.Parameters["@Idade"].Value = usuarioParam.Idade;
+
+                    var result = sqlCommand.ExecuteNonQuery();
+
+                    return Ok(result);
                 }
             }
             catch (Exception ex)
