@@ -30,16 +30,10 @@ namespace WebApplication1.Controllers
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
-                    const string cmdText = @"
-                        SELECT
-                            Nome as [Nome do Infeliz],
-                            Idade as [Idade dele]
-                        FROM usuario
-                        WHERE Idade > 20
-                        ORDER BY Nome
-                        ";
-
+                    const string cmdText = "BuscarUsuarios";
                     var sqlCommand = new SqlCommand(cmdText, connection);
+					sqlCommand.CommandType = CommandType.StoredProcedure;
+					
                     var usuarios = new List<Usuario>();
 
                     using (var reader = sqlCommand.ExecuteReader())
@@ -48,6 +42,7 @@ namespace WebApplication1.Controllers
                         {
                             var usuario = new Usuario
                             {
+								Id =  = Convert.ToInt32(reader["Id"]),
                                 Idade = Convert.ToInt32(reader["Idade dele"]),
                                 Nome = Convert.ToString(reader["Nome do Infeliz"]),
                             };
@@ -74,14 +69,10 @@ namespace WebApplication1.Controllers
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
-                    const string cmdText = @"
-                        INSERT INTO usuario                        
-                        VALUES (@Nome, @Idade);
-
-                        SELECT SCOPE_IDENTITY();
-                        ";
+                    const string cmdText = "InserirUsuario";
 
                     var sqlCommand = new SqlCommand(cmdText, connection);
+					sqlCommand.CommandType = CommandType.StoredProcedure;
 
                     sqlCommand.Parameters.Add("@Nome", SqlDbType.VarChar);
                     sqlCommand.Parameters["@Nome"].Value = usuarioParam.Nome;
@@ -140,5 +131,38 @@ namespace WebApplication1.Controllers
                 return BadRequest();
             }
         }
-    }
+		
+		[HttpDelete]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                if (id < 1)
+                    throw new ArgumentNullException();
+
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    const string cmdText = @"
+                        DELETE usuario
+                        WHERE Id = @Id
+                        ";
+
+                    var sqlCommand = new SqlCommand(cmdText, connection);
+
+                    sqlCommand.Parameters.Add("@Id", SqlDbType.Int);
+                    sqlCommand.Parameters["@Id"].Value = id;
+
+                    var result = sqlCommand.ExecuteNonQuery();
+
+                    return Ok(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+    
+	}
 }
