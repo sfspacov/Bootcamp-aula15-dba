@@ -42,17 +42,15 @@ namespace WebApplication1.Controllers
                         {
                             var usuario = new Usuario
                             {
-								Id =  = Convert.ToInt32(reader["Id"]),
-                                Idade = Convert.ToInt32(reader["Idade dele"]),
-                                Nome = Convert.ToString(reader["Nome do Infeliz"]),
+								Id = Convert.ToInt32(reader["Id"]),
+                                Idade = Convert.ToInt32(reader["Idade"]),
+                                Nome = Convert.ToString(reader["Nome"])
                             };
 
                             usuarios.Add(usuario);
                         }
                     }
-                    return Ok(usuarios
-                        .Select(x => new { NomeDoInfeliz = x.Nome, IdadeDele = x.Idade })
-                    );
+                    return Ok(usuarios);
                 }
             }
             catch (Exception ex)

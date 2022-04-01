@@ -3,23 +3,25 @@ CREATE PROCEDURE BuscarUsuarios
 AS
 	SELECT
 		Id,
-		Nome as [Nome do Infeliz],
-		Idade as [Idade dele]
+		Nome,
+		Idade
 	FROM usuario
 	ORDER BY Nome
-GO;
+GO
+
+EXEC BuscarUsuarios
 
 ALTER PROCEDURE BuscarUsuarios
 AS
 	SELECT
 		Id,
-		Nome as [Nome do Infeliz],
-		Idade as [Idade dele]
+		Nome,
+		Idade
 	FROM usuario
 	ORDER BY Nome
-GO;
+GO
 
-DELETE PROCEDURE BuscarUsuarios
+DROP PROCEDURE BuscarUsuarios
 
 -- PROC de INSERT
 CREATE PROCEDURE InserirUsuarios
@@ -30,7 +32,9 @@ AS
 	VALUES (@Nome, @Idade);
 
 	SELECT SCOPE_IDENTITY();
-GO;
+GO
+
+EXEC InserirUsuarios 'Stephan', 35
 
 ALTER PROCEDURE InserirUsuarios
 	@Nome varchar(100),
@@ -40,6 +44,6 @@ AS
 	VALUES (@Nome, @Idade);
 
 	SELECT SCOPE_IDENTITY();
-GO;
+GO
 
-DELETE PROCEDURE InserirUsuarios
+DROP PROCEDURE InserirUsuarios
